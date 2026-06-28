@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLTC HRD — LINE Integration</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; font-size: 13px; color: #333; display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 230px; min-width: 230px; background: #1a2d5a; color: #fff; display: flex; flex-direction: column; overflow-y: auto; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .logo-circle { width: 48px; height: 48px; min-width: 48px; border-radius: 50%; background: #c8a951; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 9px; color: #1a2d5a; text-align: center; line-height: 1.2; }
+  .logo-text h2 { font-size: 15px; font-weight: 700; }
+  .logo-text p { font-size: 9px; color: #aac4ff; line-height: 1.4; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; cursor: pointer; color: #ccd8f0; font-size: 13px; transition: background 0.15s; }
+  .nav-item:hover { background: rgba(255,255,255,0.08); }
+  .nav-item.active { background: #2b4a8c; color: #fff; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sub-nav { padding-left: 46px; }
+  .sub-nav .nav-item { padding: 7px 16px; font-size: 12px; }
+  .sub-dot { width: 6px; height: 6px; background: #7090c0; border-radius: 50%; flex-shrink: 0; }
+  .sidebar-footer { margin-top: auto; padding: 12px 14px; font-size: 10px; color: #7090c0; border-top: 1px solid rgba(255,255,255,0.08); }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { background: #fff; border-bottom: 1px solid #e0e4ed; display: flex; align-items: center; padding: 0 20px; height: 56px; gap: 12px; }
+  .topbar h2 { font-size: 15px; font-weight: 700; color: #1a2d5a; }
+  .topbar p { font-size: 11px; color: #888; }
+  .spacer { flex: 1; }
+  .topbar-icons { display: flex; align-items: center; gap: 12px; }
+  .icon-btn { position: relative; cursor: pointer; font-size: 18px; color: #555; padding: 4px; }
+  .badge { position: absolute; top: -4px; right: -4px; background: #e74c3c; color: #fff; border-radius: 50%; width: 16px; height: 16px; font-size: 9px; display: flex; align-items: center; justify-content: center; }
+  .user-chip { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 8px; border-radius: 8px; }
+  .user-chip:hover { background: #f0f2f5; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#2b4a8c,#1a2d5a); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; }
+  .user-name { font-size: 12px; font-weight: 600; color: #222; }
+  .user-role { font-size: 10px; color: #888; }
+
+  .content { flex: 1; display: flex; overflow: hidden; }
+  .center { flex: 1; overflow-y: auto; padding: 16px; }
+  .right-panel { width: 280px; min-width: 280px; background: #fff; border-left: 1px solid #e0e4ed; overflow-y: auto; padding: 16px; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg,#1a2d5a,#2b5fa3,#3a7fd4); border-radius: 10px; padding: 20px 24px; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 18px; min-height: 100px; }
+  .hero-logo { width: 56px; height: 56px; min-width: 56px; border-radius: 50%; background: #c8a951; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #1a2d5a; text-align: center; }
+  .hero h1 { font-size: 22px; font-weight: 800; }
+  .hero .sub { font-size: 11px; color: #a8c8ff; margin-top: 2px; }
+  .hero-building { margin-left: auto; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 14px; font-size: 10px; color: #ddeeff; text-align: center; }
+  .hero-building strong { display: block; font-size: 11px; color: #fff; }
+
+  /* LINE SECTION */
+  .line-section { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 2px solid #00B900; box-shadow: 0 2px 8px rgba(0,185,0,0.1); }
+  .line-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .line-logo { width: 36px; height: 36px; background: #00B900; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+  .line-header h3 { font-size: 14px; font-weight: 700; color: #1a2d5a; }
+  .line-header p { font-size: 11px; color: #888; }
+  .line-status { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 11px; font-weight: 600; color: #00B900; }
+  .status-dot { width: 8px; height: 8px; background: #00B900; border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .line-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .line-card { border: 1px solid #e0e4ed; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+  .line-card:hover { border-color: #00B900; box-shadow: 0 2px 10px rgba(0,185,0,0.15); transform: translateY(-1px); }
+  .line-card-icon { font-size: 24px; margin-bottom: 8px; }
+  .line-card h4 { font-size: 12px; font-weight: 700; color: #1a2d5a; margin-bottom: 4px; }
+  .line-card p { font-size: 10px; color: #888; line-height: 1.5; }
+
+  /* NOTIFY TEST */
+  .notify-box { background: #f8f9fc; border-radius: 10px; padding: 14px; margin-top: 12px; border: 1px solid #e0e4ed; }
+  .notify-box h4 { font-size: 12px; font-weight: 700; color: #1a2d5a; margin-bottom: 10px; }
+  .notify-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .notify-row label { font-size: 11px; color: #555; min-width: 90px; }
+  .notify-row input, .notify-row select {
+    flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 11px; outline: none;
+  }
+  .notify-row input:focus, .notify-row select:focus { border-color: #00B900; }
+  .btn-line { background: #00B900; color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .btn-line:hover { background: #009900; }
+  .btn-line:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* LEAVE GRID */
+  .leave-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .leave-card { background: #fff; border-radius: 10px; padding: 12px 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border: 1px solid #eaedf3; transition: all 0.2s; user-select: none; }
+  .leave-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+  .leave-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .leave-card span { font-size: 11px; font-weight: 600; color: #333; line-height: 1.3; }
+
+  /* TABLE */
+  .card { background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #eaedf3; margin-bottom: 14px; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .card-title { font-size: 13px; font-weight: 700; color: #1a2d5a; }
+  .see-all { font-size: 11px; color: #2b5fa3; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-size: 10px; color: #888; font-weight: 600; text-align: left; padding: 4px 6px; border-bottom: 1px solid #f0f2f5; }
+  tbody td { padding: 7px 6px; font-size: 11px; color: #444; border-bottom: 1px solid #f8f9fc; vertical-align: middle; }
+  .b-approved { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; background: #e6f4ea; color: #2e7d32; }
+  .b-pending { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; background: #fff3e0; color: #e65100; }
+  .action-btns { display: flex; gap: 4px; }
+  .btn-approve { background: #00B900; color: #fff; border: none; border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; }
+  .btn-reject { background: #e53935; color: #fff; border: none; border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; }
+  .btn-line-notify { background: #fff; color: #00B900; border: 1.5px solid #00B900; border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; font-weight: 600; }
+  .btn-line-notify:hover { background: #00B900; color: #fff; }
+
+  /* RIGHT PANEL */
+  .rp-title { font-size: 12px; font-weight: 700; color: #1a2d5a; margin-bottom: 10px; }
+  .profile-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #f0f2f5; }
+  .p-name { font-size: 13px; font-weight: 700; color: #1a2d5a; }
+  .p-sub { font-size: 10px; color: #777; margin-top: 1px; }
+  .quota-item { margin-bottom: 9px; }
+  .quota-label { display: flex; justify-content: space-between; font-size: 11px; color: #444; margin-bottom: 3px; }
+  .quota-bar { height: 6px; background: #eef0f5; border-radius: 4px; overflow: hidden; }
+  .quota-fill { height: 100%; border-radius: 4px; }
+  .quota-btn { width: 100%; margin-top: 10px; padding: 7px; border: 1px solid #2b5fa3; background: #fff; color: #2b5fa3; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+  /* NEWS */
+  .news-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f2f5; }
+  .news-item:last-child { border-bottom: none; }
+  .news-text { flex: 1; font-size: 11px; color: #444; line-height: 1.4; }
+  .news-date { font-size: 10px; color: #aaa; white-space: nowrap; }
+
+  /* CALENDAR */
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .cal-month { font-size: 12px; font-weight: 700; color: #1a2d5a; }
+  .cal-nav { background: none; border: none; color: #2b5fa3; cursor: pointer; font-size: 14px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; text-align: center; }
+  .cal-grid .dl { font-size: 9px; color: #999; font-weight: 600; padding: 3px 0; }
+  .day { font-size: 11px; color: #444; padding: 3px; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin: auto; cursor: pointer; }
+  .day:hover { background: #e3f0ff; }
+  .day.today { background: #1a2d5a; color: #fff; font-weight: 700; }
+  .day.sat { color: #2b5fa3; }
+  .day.sun { color: #e53935; }
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .leg-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #555; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #1a2d5a; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 12px; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 300px; }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #00B900; }
+  .toast.error { background: #e53935; }
+
+  /* CONFIG MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 24px; width: 420px; max-width: 90vw; }
+  .modal h3 { font-size: 16px; font-weight: 700; color: #1a2d5a; margin-bottom: 4px; }
+  .modal p { font-size: 11px; color: #888; margin-bottom: 16px; }
+  .form-row { margin-bottom: 12px; }
+  .form-row label { display: block; font-size: 11px; font-weight: 600; color: #555; margin-bottom: 4px; }
+  .form-row input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 12px; outline: none; }
+  .form-row input:focus { border-color: #00B900; }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .btn-cancel { background: #f0f2f5; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; cursor: pointer; }
+  .btn-save { background: #00B900; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: #c5cfe8; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal">
+    <h3>⚙️ ตั้งค่า LINE Official Account</h3>
+    <p>กรอก Token จาก LINE Developers Console</p>
+    <div class="form-row">
+      <label>Channel Access Token</label>
+      <input type="text" id="inp-token" placeholder="วาง Channel Access Token ที่นี่" />
+    </div>
+    <div class="form-row">
+      <label>Webhook URL (Server ของคุณ)</label>
+      <input type="text" id="inp-webhook" placeholder="https://your-server.com/webhook" />
+    </div>
+    <div class="form-row">
+      <label>Bot Server URL (สำหรับ Push Notify)</label>
+      <input type="text" id="inp-server" placeholder="https://your-server.com" value="http://localhost:3000" />
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeConfig()">ยกเลิก</button>
+      <button class="btn-save" onclick="saveConfig()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-circle">PLTC<br>HRD</div>
+    <div class="logo-text">
+      <h2>PLTC HRD</h2>
+      <p>ระบบบริหารและพัฒนา<br>ทรัพยากรบุคคล<br>วิทยาลัยเทคนิคพิษณุโลก</p>
+    </div>
+  </div>
+  <nav style="flex:1">
+    <div class="nav-item active"><span class="nav-icon">🏠</span>หน้าแรก</div>
+    <div class="nav-item"><span class="nav-icon">📅</span>การลา <span style="margin-left:auto;font-size:10px">▲</span></div>
+    <div class="sub-nav">
+      <div class="nav-item"><div class="sub-dot"></div>ยื่นใบลา</div>
+      <div class="nav-item"><div class="sub-dot"></div>ติดตามสถานะการลา</div>
+      <div class="nav-item"><div class="sub-dot"></div>ประวัติการลา</div>
+      <div class="nav-item"><div class="sub-dot"></div>สิทธิ์การลา</div>
+    </div>
+    <div class="nav-item" style="color:#00B900" onclick="openConfig()"><span class="nav-icon">💬</span>LINE Official <span style="background:#00B900;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px">ใหม่</span></div>
+    <div class="nav-item"><span class="nav-icon">🕐</span>ลงเวลา</div>
+    <div class="nav-item"><span class="nav-icon">📋</span>ภาระงาน</div>
+    <div class="nav-item"><span class="nav-icon">✅</span>ประเมินผลการปฏิบัติงาน</div>
+    <div class="nav-item"><span class="nav-icon">📄</span>เอกสาร/คำร้อง</div>
+    <div class="nav-item"><span class="nav-icon">📢</span>ข่าวสาร/ประกาศ</div>
+    <div class="nav-item"><span class="nav-icon">📊</span>รายงาน</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span>ตั้งค่าข้อมูล</div>
+    <div class="nav-item"><span class="nav-icon">❓</span>ช่วยเหลือ/คู่มือการใช้งาน</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div>© 2024 PLTC HRD</div><div>Version 1.0.0</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <span style="font-size:20px;cursor:pointer;color:#555">☰</span>
+    <div>
+      <h2>งานบริหารและพัฒนาทรัพยากรบุคคล (PLTC HRD)</h2>
+      <p>วิทยาลัยเทคนิคพิษณุโลก</p>
+    </div>
+    <div class="spacer"></div>
+    <div class="topbar-icons">
+      <div class="icon-btn">🔔<span class="badge">3</span></div>
+      <div class="icon-btn">✉️</div>
+      <div class="user-chip">
+        <div class="avatar">สช</div>
+        <div>
+          <div class="user-name">นายสมชาย ใจดี</div>
+          <div class="user-role">ครู วิทยฐานะชำนาญการ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="center">
+
+      <!-- HERO -->
+      <div class="hero">
+        <div class="hero-logo">PLTC<br>HRD</div>
+        <div>
+          <h1>PLTC HRD</h1>
+          <div class="sub">Human Resource Development</div>
+          <div class="sub">ระบบบริหารและพัฒนาทรัพยากรบุคคล</div>
+          <div class="sub">วิทยาลัยเทคนิคพิษณุโลก</div>
+        </div>
+        <div class="hero-building">
+          <strong>วิทยาลัยเทคนิคพิษณุโลก</strong>
+          PHITSANULOK TECHNICAL COLLEGE
+        </div>
+      </div>
+
+      <!-- LINE SECTION -->
+      <div class="line-section">
+        <div class="line-header">
+          <div class="line-logo">💬</div>
+          <div>
+            <h3>LINE Official Account Integration</h3>
+            <p>เชื่อมต่อระบบ PLTC HRD กับ LINE Chatbot</p>
+          </div>
+          <div class="line-status"><div class="status-dot"></div>เชื่อมต่อแล้ว</div>
+        </div>
+
+        <div class="line-grid">
+          <div class="line-card">
+            <div class="line-card-icon">📋</div>
+            <h4>ยื่นใบลาผ่าน LINE</h4>
+            <p>ผู้ใช้สามารถยื่นใบลาได้โดยตรงจาก LINE Chatbot เลือกประเภทและระบุวันที่ได้ทันที</p>
+          </div>
+          <div class="line-card">
+            <div class="line-card-icon">🔔</div>
+            <h4>แจ้งเตือนสถานะการลา</h4>
+            <p>ระบบส่งการแจ้งเตือนผ่าน LINE ทันทีเมื่อสถานะใบลาเปลี่ยนแปลง</p>
+          </div>
+          <div class="line-card">
+            <div class="line-card-icon">✅</div>
+            <h4>อนุมัติใบลาผ่าน LINE</h4>
+            <p>ผู้บริหารสามารถอนุมัติหรือไม่อนุมัติใบลาได้จากปุ่มใน LINE โดยตรง</p>
+          </div>
+          <div class="line-card">
+            <div class="line-card-icon">📊</div>
+            <h4>ดูสิทธิ์การลาผ่าน LINE</h4>
+            <p>พิมพ์ "สิทธิ์การลา" ใน LINE Chatbot เพื่อดูวันลาคงเหลือแบบ Real-time</p>
+          </div>
+        </div>
+
+        <!-- TEST NOTIFY BOX -->
+        <div class="notify-box">
+          <h4>🔔 ทดสอบส่งแจ้งเตือน LINE</h4>
+          <div class="notify-row">
+            <label>User ID (LINE)</label>
+            <input type="text" id="line-userid" placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+          </div>
+          <div class="notify-row">
+            <label>เลขที่ใบลา</label>
+            <input type="text" id="leave-id" value="LV-2567-00245" />
+          </div>
+          <div class="notify-row">
+            <label>สถานะ</label>
+            <select id="leave-status">
+              <option value="อนุมัติแล้ว">✅ อนุมัติแล้ว</option>
+              <option value="ไม่อนุมัติ">❌ ไม่อนุมัติ</option>
+              <option value="รอดำเนินการ">⏳ รอดำเนินการ</option>
+            </select>
+          </div>
+          <button class="btn-line" onclick="testNotify()">
+            💬 ส่งแจ้งเตือน LINE
+          </button>
+        </div>
+      </div>
+
+      <!-- LEAVE GRID -->
+      <div style="font-size:13px;font-weight:700;color:#1a2d5a;margin-bottom:12px">ยื่นใบลา (11 ประเภท)</div>
+      <div class="leave-grid">
+        <div class="leave-card" onclick="openForm(1)"><div class="leave-icon" style="background:#e8f5e9">🏥</div><span>1. ลาป่วย</span></div>
+        <div class="leave-card" onclick="openForm(2)"><div class="leave-icon" style="background:#fce4ec">👶</div><span>2. ลาคลอดบุตร</span></div>
+        <div class="leave-card" onclick="openForm(3)"><div class="leave-icon" style="background:#e3f2fd">👨‍👩‍👦</div><span>3. ลาไปช่วยเหลือภริยาที่คลอดบุตร</span></div>
+        <div class="leave-card" onclick="openForm(4)"><div class="leave-icon" style="background:#fff3e0">💼</div><span>4. ลากิจส่วนตัว</span></div>
+        <div class="leave-card" onclick="openForm(5)"><div class="leave-icon" style="background:#e8f5e9">🌴</div><span>5. ลาพักผ่อน</span></div>
+        <div class="leave-card" onclick="openForm(6)"><div class="leave-icon" style="background:#fef9e7">⛩️</div><span>6. ลาอุปสมบท/ฮัจย์</span></div>
+        <div class="leave-card" onclick="openForm(7)"><div class="leave-icon" style="background:#f3e5f5">🔍</div><span>7. ลาเข้ารับการตรวจเลือก</span></div>
+        <div class="leave-card" onclick="openForm(8)"><div class="leave-icon" style="background:#e0f7fa">🎓</div><span>8. ลาศึกษา/ฝึกอบรม</span></div>
+        <div class="leave-card" onclick="openForm(9)"><div class="leave-icon" style="background:#e8eaf6">🌐</div><span>9. ลาปฏิบัติงานองค์การระหว่างประเทศ</span></div>
+        <div class="leave-card" onclick="openForm(10)"><div class="leave-icon" style="background:#fce4ec">👥</div><span>10. ลาติดตามคู่สมรส</span></div>
+        <div class="leave-card" onclick="openForm(11)"><div class="leave-icon" style="background:#e8f5e9">♿</div><span>11. ลาฟื้นฟูสมรรถภาพด้านอาชีพ</span></div>
+      </div>
+
+      <!-- TABLE: PENDING APPROVALS -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">ใบลารออนุมัติ (ผู้บริหาร)</span>
+          <span class="see-all">ดูทั้งหมด</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>เลขที่ใบลา</th><th>ผู้ยื่น</th><th>ประเภท</th><th>วันที่ลา</th><th>สถานะ</th><th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="leave-table-body">
+            <tr>
+              <td>LV-2567-00250</td>
+              <td>นางสมหญิง รักดี</td>
+              <td>ลาป่วย</td>
+              <td>28 มิ.ย. 67 – 30 มิ.ย. 67</td>
+              <td><span class="b-pending">รอดำเนินการ</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn-approve" onclick="approveLeave('LV-2567-00250', 'อนุมัติแล้ว', this)">✅</button>
+                  <button class="btn-reject" onclick="approveLeave('LV-2567-00250', 'ไม่อนุมัติ', this)">❌</button>
+                  <button class="btn-line-notify" onclick="notifyLine('U_SOMYING', 'LV-2567-00250')">💬 LINE</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>LV-2567-00249</td>
+              <td>นายประสิทธิ์ ขยันดี</td>
+              <td>ลากิจส่วนตัว</td>
+              <td>27 มิ.ย. 67 – 27 มิ.ย. 67</td>
+              <td><span class="b-pending">รอดำเนินการ</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn-approve" onclick="approveLeave('LV-2567-00249', 'อนุมัติแล้ว', this)">✅</button>
+                  <button class="btn-reject" onclick="approveLeave('LV-2567-00249', 'ไม่อนุมัติ', this)">❌</button>
+                  <button class="btn-line-notify" onclick="notifyLine('U_PRASIT', 'LV-2567-00249')">💬 LINE</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /center -->
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div style="margin-bottom:16px">
+        <div class="profile-wrap">
+          <div class="avatar" style="width:52px;height:52px;font-size:16px">สช</div>
+          <div>
+            <div class="p-name">นายสมชาย ใจดี</div>
+            <div class="p-sub">ครู วิทยฐานะชำนาญการ</div>
+            <div class="p-sub">🏛 แผนกวิชาช่างยนต์ • ฝ่ายวิชาการ</div>
+            <div class="p-sub">🕐 31 พ.ค. 67 08:45 น.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rp-title">สิทธิ์การลาคงเหลือ ปีงบประมาณ 2567</div>
+      <div class="quota-item">
+        <div class="quota-label"><span>ลาป่วย</span><span>55 / 60 วัน</span></div>
+        <div class="quota-bar"><div class="quota-fill" style="width:91.6%;background:#4caf50"></div></div>
+      </div>
+      <div class="quota-item">
+        <div class="quota-label"><span>ลากิจส่วนตัว</span><span>40 / 45 วัน</span></div>
+        <div class="quota-bar"><div class="quota-fill" style="width:88.8%;background:#ff9800"></div></div>
+      </div>
+      <div class="quota-item">
+        <div class="quota-label"><span>ลาพักผ่อน</span><span>8 / 10 วัน</span></div>
+        <div class="quota-bar"><div class="quota-fill" style="width:80%;background:#2196f3"></div></div>
+      </div>
+      <div class="quota-item">
+        <div class="quota-label"><span>ลาคลอดบุตร</span><span>90 / 90 วัน</span></div>
+        <div class="quota-bar"><div class="quota-fill" style="width:100%;background:#e91e63"></div></div>
+      </div>
+      <div class="quota-item">
+        <div class="quota-label"><span>ลาอุปสมบท/ฮัจย์</span><span>120 / 120 วัน</span></div>
+        <div class="quota-bar"><div class="quota-fill" style="width:100%;background:#9c27b0"></div></div>
+      </div>
+      <button class="quota-btn">ดูสิทธิ์การลาทั้งหมด</button>
+
+      <div style="margin-top:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="rp-title" style="margin:0">ข่าวสาร / ประกาศ</div>
+          <span class="see-all">ดูทั้งหมด</span>
+        </div>
+        <div class="news-item"><span>📢</span><span class="news-text">ประกาศหลักเกณฑ์การลาประจำปี 2567</span><span class="news-date">28 พ.ค. 67</span></div>
+        <div class="news-item"><span>📢</span><span class="news-text">กำหนดการตรวจสุขภาพประจำปี 2567</span><span class="news-date">23 พ.ค. 67</span></div>
+        <div class="news-item"><span>📢</span><span class="news-text">แจ้งปรับปรุงระบบ PLTC HRD + LINE Bot</span><span class="news-date">20 พ.ค. 67</span></div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="cal-header">
+          <span class="cal-month">ปฏิทินการลา — มิถุนายน 2567</span>
+          <div><button class="cal-nav">‹</button><button class="cal-nav">›</button></div>
+        </div>
+        <div class="cal-grid">
+          <span class="dl" style="color:#e53935">อา</span><span class="dl">จ</span><span class="dl">อ</span><span class="dl">พ</span><span class="dl">พฤ</span><span class="dl">ศ</span><span class="dl" style="color:#2b5fa3">ส</span>
+          <span></span><span></span><span></span><span></span><span></span><span></span><span class="day sat">1</span>
+          <span class="day sun">2</span><span class="day">3</span><span class="day">4</span><span class="day">5</span><span class="day">6</span><span class="day">7</span><span class="day sat">8</span>
+          <span class="day sun">9</span><span class="day">10</span><span class="day">11</span><span class="day">12</span><span class="day">13</span><span class="day">14</span><span class="day sat">15</span>
+          <span class="day sun">16</span><span class="day">17</span><span class="day">18</span><span class="day">19</span><span class="day">20</span><span class="day">21</span><span class="day sat">22</span>
+          <span class="day sun">23</span><span class="day">24</span><span class="day">25</span><span class="day">26</span><span class="day today">27</span><span class="day">28</span><span class="day sat">29</span>
+          <span class="day sun">30</span>
+        </div>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4caf50"></div>ลาป่วย</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#ff9800"></div>ลากิจ</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2196f3"></div>ลาพักผ่อน</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#00B900"></div>LINE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===========================
+// Config
+// ===========================
+let config = {
+  token: localStorage.getItem('line_token') || '',
+  server: localStorage.getItem('line_server') || 'http://localhost:3000'
+};
+
+function openConfig() {
+  document.getElementById('inp-token').value = config.token;
+  document.getElementById('inp-server').value = config.server;
+  document.getElementById('configModal').classList.add('show');
+}
+function closeConfig() {
+  document.getElementById('configModal').classList.remove('show');
+}
+function saveConfig() {
+  config.token = document.getElementById('inp-token').value.trim();
+  config.server = document.getElementById('inp-server').value.trim();
+  localStorage.setItem('line_token', config.token);
+  localStorage.setItem('line_server', config.server);
+  closeConfig();
+  showToast('✅ บันทึกการตั้งค่า LINE สำเร็จ', 'success');
+}
+
+// ===========================
+// Toast
+// ===========================
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ===========================
+// ส่ง Push Notify ผ่าน Server
+// ===========================
+async function notifyLine(userId, leaveId, status) {
+  const s = status || document.getElementById('leave-status')?.value || 'อนุมัติแล้ว';
+  if (!config.server) return showToast('⚠️ กรุณาตั้งค่า Server URL ก่อน', 'error');
+  try {
+    const res = await fetch(`${config.server}/api/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, leaveId, status: s })
+    });
+    if (res.ok) {
+      showToast('💬 ส่งแจ้งเตือน LINE สำเร็จ!', 'success');
+    } else {
+      showToast('❌ ส่งไม่สำเร็จ: ' + res.statusText, 'error');
+    }
+  } catch (e) {
+    // Demo mode — แสดง mock response
+    showToast(`💬 [Demo] ส่ง LINE แจ้งเตือน ${leaveId} → ${s} สำเร็จ`, 'success');
+  }
+}
+
+// ===========================
+// ทดสอบจาก Notify Box
+// ===========================
+function testNotify() {
+  const userId = document.getElementById('line-userid').value.trim() || 'U_TEST';
+  const leaveId = document.getElementById('leave-id').value.trim();
+  const status = document.getElementById('leave-status').value;
+  notifyLine(userId, leaveId, status);
+}
+
+// ===========================
+// อนุมัติใบลา + ส่ง LINE
+// ===========================
+function approveLeave(leaveId, status, btn) {
+  const row = btn.closest('tr');
+  const statusCell = row.querySelector('.b-pending, .b-approved');
+  if (statusCell) {
+    statusCell.textContent = status === 'อนุมัติแล้ว' ? 'อนุมัติแล้ว' : 'ไม่อนุมัติ';
+    statusCell.className = status === 'อนุมัติแล้ว' ? 'b-approved' : 'b-pending';
+    statusCell.style.background = status === 'อนุมัติแล้ว' ? '#e6f4ea' : '#fce4ec';
+    statusCell.style.color = status === 'อนุมัติแล้ว' ? '#2e7d32' : '#c62828';
+  }
+  // ส่ง LINE อัตโนมัติ
+  notifyLine('U_SOMYING', leaveId, status);
+  showToast(`✅ ${status === 'อนุมัติแล้ว' ? 'อนุมัติ' : 'ปฏิเสธ'}ใบลา ${leaveId} + ส่ง LINE แล้ว`, 'success');
+}
+
+// เปิด Google Form ยื่นใบลา พร้อมเลือกประเภทอัตโนมัติ
+const FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSc7EqBYm66rCEiHJNKXfEJEMcXI7Tv77cS6O5seTYeKvF_cSw/viewform';
+const LEAVE_ENTRY = 'entry.1114753257';
+
+const leaveTypes = {
+  1: 'ลาป่วย',
+  2: 'ลาคลอดบุตร',
+  3: 'ลาช่วยเหลือภริยาที่คลอดบุตร',
+  4: 'ลากิจส่วนตัว',
+  5: 'ลาพักผ่อน',
+  6: 'ลาอุปสมบท หรือลาไปประกอบพิธีฮัจย์',
+  7: 'ลาเข้ารับการตรวจเลือกหรือเข้ารับการเตรียมพล',
+  8: 'ลาไปศึกษา ฝึกอบรม ปฏิบัติการวิจัย หรือดูงาน',
+  9: 'ลาไปปฏิบัติงานในองค์การระหว่างประเทศ',
+  10: 'ลาติดตามคู่สมรส',
+  11: 'ลาเพื่อฟื้นฟูสมรรถภาพด้านอาชีพ'
+};
+
+function openForm(leaveNum) {
+  const leaveType = leaveTypes[leaveNum] || '';
+  const url = `${FORM_BASE}?usp=pp_url&${LEAVE_ENTRY}=${encodeURIComponent(leaveType)}`;
+  window.open(url, '_blank');
+}
+
+// โหลด config เก่า
+window.onload = () => {
+  if (config.token) {
+    document.querySelector('.line-status').innerHTML = '<div class="status-dot"></div>เชื่อมต่อแล้ว';
+  }
+};
+</script>
+</body>
+</html>
